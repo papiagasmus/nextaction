@@ -85,6 +85,9 @@ These decisions are the Phase 01 specification baseline. Change them deliberatel
 
 ## Browser testing and live preview
 
-GitHub Actions runs Playwright in desktop and mobile Chromium against the app shell and `/api/health`. The pull-request preview workflow builds and publishes a **Cloudflare Worker Preview** named `owner-review`, checks the health endpoint, and comments the live URL on the PR. It uses `wrangler preview`, not `wrangler deploy`; it does not deploy the main branch or production.
+GitHub Actions runs Playwright in desktop and mobile Chromium against the app shell and `/api/health`. Use the dedicated Worker names `nextaction` (production) and `nextaction-preview` (review preview). The pull-request workflow builds the app, deploys only to the separate `nextaction-preview` Worker, probes its health endpoint, and comments `https://nextaction-preview.nextactiondev.workers.dev` on the PR. The production Worker `nextaction` is not targeted by this command.
 
 One-time setup: create a Cloudflare API token scoped to this account with **Workers Scripts: Edit**, then add it as the repository Actions secret `CLOUDFLARE_API_TOKEN` in [GitHub Actions secrets](https://github.com/papiagasmus/nextaction/settings/secrets/actions). Do not put the token in code, logs, or documentation. Until that secret is present, the preview workflow leaves a setup note on the PR instead of failing the normal CI checks.
+
+
+Cloudflare hostname note: the account-level Workers subdomain is currently `nextactiondev`, so the preview URL is `nextaction-preview.nextactiondev.workers.dev`. Cloudflare rejected the account subdomain slug `nextaction` as unavailable. The Worker name and account subdomain are separate parts of a `workers.dev` hostname.
