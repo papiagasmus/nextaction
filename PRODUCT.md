@@ -6,6 +6,12 @@ NextAction is an event-triggered ad network for micro-SaaS founders, indie hacke
 
 The initial market is the United States and global SaaS builders. Product-facing UI and copy must be in English.
 
+### Brand and UI direction
+- Use **Jakarta Sans** as the primary interface font.
+- Preserve the chosen visual direction of a letter **N** mark with its existing background treatment, thin strokes/weight, straight lines, and deliberate padding. The actual source artwork must be present before visual implementation; this documentation-only repository does not currently contain the logo asset.
+- Landing-page copy should present NextAction as the real product, not position it as a demo or prototype. At the same time, copy must not claim that a feature is live until it has actually been implemented and released.
+- Keep product copy concise and natural for the US/global SaaS audience; use English throughout the product UI.
+
 ## 2. Core users and value
 
 - **Publisher:** integrates a SaaS product, defines workflow contexts, verifies domain ownership, and may earn revenue from eligible ads.
