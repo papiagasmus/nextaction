@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   preview:
-    name: Build owner-review preview
+    name: Build nextaction-preview Worker
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
@@ -37,14 +37,14 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr comment "${{ github.event.pull_request.number }}" --edit-last --create-if-none --body "Live browser preview is waiting for the one-time Cloudflare credential setup. Add the repository Actions secret CLOUDFLARE_API_TOKEN at https://github.com/papiagasmus/nextaction/settings/secrets/actions, scoped to this Cloudflare account with Workers Scripts: Edit. Then push a new commit to this PR; the workflow will publish the preview URL automatically. This uses an isolated Worker Preview, not a production deployment."
+          gh pr comment "${{ github.event.pull_request.number }}" --edit-last --create-if-none --body "Live browser preview is waiting for the one-time Cloudflare credential setup. Add the repository Actions secret CLOUDFLARE_API_TOKEN at https://github.com/papiagasmus/nextaction/settings/secrets/actions, scoped to this Cloudflare account with Workers Scripts: Edit. Then push a new commit to this PR; the workflow will publish the preview URL automatically. The dedicated Worker is named nextaction-preview; production Worker nextaction is not touched."
       - name: Install dependencies
         if: steps.auth.outputs.available == 'true'
         run: npm ci
       - name: Build application
         if: steps.auth.outputs.available == 'true'
         run: npm run build
-      - name: Publish or update the owner-review Worker Preview
+      - name: Publish or update the dedicated nextaction-preview Worker
         if: steps.auth.outputs.available == 'true'
         id: preview
         env:
@@ -52,8 +52,8 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: fcda7c36aebd76d5a8cf7f1a009795b6
         run: |
           set -euo pipefail
-          output="$(npx wrangler preview --name "owner-review" --json)"
-          preview_url="$(printf '%s' "$output" | jq -er '.preview.urls[0]')"
+          npx wrangler deploy --name "nextaction-preview"
+          preview_url="https://nextaction-preview.nextactiondev.workers.dev"
           echo "url=$preview_url" >> "$GITHUB_OUTPUT"
           echo "Preview URL: $preview_url"
       - name: Probe preview API health
@@ -72,4 +72,4 @@ jobs:
         run: |
           gh pr comment "${{ github.event.pull_request.number }}" --edit-last --create-if-none --body "Browser preview: $PREVIEW_URL
 
-          The Worker API health probe passed. This is an isolated preview and does not update production."
+          The Worker API health probe passed. This URL is served by the dedicated nextaction-preview Worker. Production Worker nextaction is not changed."
