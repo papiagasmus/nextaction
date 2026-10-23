@@ -28,7 +28,7 @@ Follow this sequence as the execution order. P0–P3 labels in the next section 
 5. **Step 06 — Publisher onboarding and ownership:** implement workspace invitations/role controls, manual workflow setup, DNS domain verification, permission checks, and audit events.
 6. **Step 07 — AI website/workflow discovery:** diagnose each stage of public website reading, add structured AI suggestions and evidence where feasible, and preserve manual fallback. This is intentionally tested before campaign APIs are built.
 7. **Step 08 — Campaign management API:** implement campaign draft, review, edit, approval/rejection, activation, and pause.
-8. **Step 09 — Ad path and publisher integration:** implement workflow matching, creatives, serving responses, event tracking, deduplication, rate controls, fraud checks, and explicit policy enforcement.
+8. **Step 09 — Ad path and publisher integration:** define and implement the Publisher SDK/beacon/API request/response contract and scoped integration credential, then add workflow matching, creatives, serving responses, event tracking, deduplication, rate controls, fraud checks, and explicit policy enforcement.
 9. **Step 10 — Production deployment and verification:** deploy the approved main commit to the canonical Cloudflare Worker only after CI is green; run E2E, security checks, production smoke tests, and rollback verification.
 10. **Step 11 — Ledger, payments, and payout:** after ad events and campaign behavior are reliable, implement transaction ledger, reconciliation, pricing/attribution semantics, and only then payment-provider/payout integration.
 
@@ -81,12 +81,13 @@ Automated browser tests must cover:
 5. Site blocked/unreachable is distinguished from malformed URL and the manual path remains available.
 6. An unauthenticated visitor submits a valid URL and sees Google and GitHub login options.
 7. OAuth start is requested for the selected provider and uses an approved internal callback.
-8. Callback success returns the user to onboarding with the original normalized URL preserved.
-9. Callback errors, provider cancellation, and expired state show a recoverable error without an open redirect or lost onboarding intent.
-10. The first onboarding role choice is Publisher, Advertiser, or Both and appears before “Your product setup”.
-11. Advertiser-only onboarding does not silently create or verify a publisher domain.
-12. After completing onboarding, a signed-in user's primary landing CTA says “Go to dashboard”.
-13. Refresh/back navigation does not lose onboarding state or create duplicate records.
+8. Callback success returns to onboarding with the original normalized URL preserved when a pending URL intent exists, including for a returning user.
+9. When no pending URL intent exists, a new user enters onboarding and a returning user who completed onboarding goes to the dashboard.
+10. Callback errors, provider cancellation, and expired state show a recoverable error without an open redirect or lost onboarding intent.
+11. The first onboarding role choice is Publisher, Advertiser, or Both and appears before “Your product setup”.
+12. Advertiser-only onboarding does not silently create or verify a publisher domain.
+13. After completing onboarding, a signed-in user's primary landing CTA says “Go to dashboard”.
+14. Refresh/back navigation does not lose onboarding state or create duplicate records.
 
 Use a controlled auth/session fixture in deterministic CI tests. Do not rely on automated navigation through third-party Google/GitHub pages for every PR, since that introduces provider-side interactivity and rate/automation variability. Separately maintain a real Google and real GitHub OAuth smoke test for the configured non-production/preview flow using dedicated test identities. Clearly report when the smoke test was last run and its outcome.
 
@@ -134,7 +135,17 @@ Use deterministic HTML/model fixtures for fast unit tests. Run a separate contro
 - Impression/click duplicates, replay, rate abuse, and invalid event payloads are handled.
 - Audit records capture privileged changes without tokens or sensitive content.
 
-## 10. Database migrations and test environment
+## 10. Ad event and integration security tests
+
+- A verified publisher can use only its own integration credential/workflow identifiers.
+- Revoked credentials stop working; rotation does not accidentally grant another publisher access.
+- A public/browser-visible key is not accepted as proof of a privileged server-side action.
+- Unverified domains cannot activate live publisher integration.
+- Invalid payloads, workflow IDs, event types, and oversized requests are rejected.
+- Event replay, duplicate impressions/clicks, rate abuse, and cross-publisher spoofing are covered.
+- The event flow sends only declared workflow metadata—not invoice/document/object contents.
+
+## 11. Database migrations and test environment
 
 - Store all schema changes as ordered migration files in the repository.
 - Do not make untracked dashboard-only schema changes.
@@ -145,7 +156,7 @@ Use deterministic HTML/model fixtures for fast unit tests. Run a separate contro
 - Only one hosted Supabase project is permitted by this specification. Do not create a second hosted project for convenience. If a hosted end-to-end smoke test is required, use a dedicated test identity/data set, restrict it to safe operations, and clean up deliberately.
 - Require explicit owner approval before destructive operations against the hosted project.
 
-## 11. Pull request and definition of done
+## 12. Pull request and definition of done
 
 Each PR states behavior, scope/non-goals, security/data impact, migration impact, test outcomes, required secret names (not values), and rollback implications.
 
