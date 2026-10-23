@@ -159,3 +159,12 @@ Use deterministic HTML/model fixtures for fast unit tests. Run a separate contro
 Each PR states behavior, scope/non-goals, security/data impact, migration impact, test outcomes, required secret names (not values), and rollback implications.
 
 A feature is done only when intended behavior is reproducible, relevant tests pass, authorization/failure cases are covered, logs avoid secrets, documentation is current, and deployment impact is understood.
+
+
+## Browser E2E and review preview
+
+- Run `npm ci`, `npx playwright install chromium`, then `npm run test:e2e` locally.
+- The Playwright suite runs against the Vite/Cloudflare local Worker runtime in desktop Chromium and a mobile Chromium profile. It checks the shell render, browser runtime errors, `GET /api/health`, and horizontal overflow.
+- GitHub Actions retains the Playwright HTML report and failure traces as an artifact for seven days.
+- The PR preview workflow uses the single `owner-review` Cloudflare Worker Preview alias and runs an HTTP health probe before posting the preview URL. It must only use `wrangler preview`; do not change it to `wrangler deploy` as part of browser-review work.
+- One-time preview credential setup is documented in README.md. The account-level workers.dev subdomain currently used for this project is `nextactiondev`; no production Worker is being deployed by this setup.

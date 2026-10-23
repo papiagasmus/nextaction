@@ -81,3 +81,10 @@ These are point-in-time observations, not a full audit of every Cloudflare produ
 ## Change control
 
 These decisions are the Phase 01 specification baseline. Change them deliberately in a reviewed documentation/code change. Do not move to application implementation until the owner has reviewed and approved the six-document specification.
+
+
+## Browser testing and live preview
+
+GitHub Actions runs Playwright in desktop and mobile Chromium against the app shell and `/api/health`. The pull-request preview workflow builds and publishes a **Cloudflare Worker Preview** named `owner-review`, checks the health endpoint, and comments the live URL on the PR. It uses `wrangler preview`, not `wrangler deploy`; it does not deploy the main branch or production.
+
+One-time setup: create a Cloudflare API token scoped to this account with **Workers Scripts: Edit**, then add it as the repository Actions secret `CLOUDFLARE_API_TOKEN` in [GitHub Actions secrets](https://github.com/papiagasmus/nextaction/settings/secrets/actions). Do not put the token in code, logs, or documentation. Until that secret is present, the preview workflow leaves a setup note on the PR instead of failing the normal CI checks.
