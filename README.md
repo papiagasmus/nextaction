@@ -44,7 +44,7 @@ npm ci
 npm run dev
 ```
 
-The first application shell reports the status of the Worker API at /api/health. It is an engineering health page, not the finished product landing/onboarding flow.
+The first application shell reports the status of the Worker API at /api/health. It is an engineering health page, not the finished product landing/onboarding flow. The visible N glyph is a temporary text placeholder, not the final logo artwork; the actual landing URL/login flow is built in Step 05.
 
 Useful checks:
 
@@ -71,7 +71,7 @@ Phase 01 (specification review) is approved. Step 02 has added the initial appli
 
 - GitHub: papiagasmus/nextaction, default branch main; six approved foundation documents remain in the repository.
 - Application: React + Vite + TypeScript UI and Hono API in the same Cloudflare Worker app, based on the official Cloudflare Vite/React starter. A minimal Worker health route and one Node.js unit test are included.
-- CI: a GitHub Actions workflow runs install, lint, unit test, build, and Wrangler dry-run checks. Verify its latest run before calling the scaffold build-verified.
+- CI: the initial scaffold commit (7ee9676) passed GitHub Actions run #1: npm ci, lint, unit test, TypeScript/Vite build, and Wrangler deploy dry-run. [See run](https://github.com/papiagasmus/nextaction/actions/runs/39949446740).
 - Supabase: project nextaction, ref zrtosqxesdvcijatsito, active. No application tables, application migration records, or Edge Functions were found. The application is not connected to Supabase yet.
 - Cloudflare: initial API checks found no Workers scripts, Pages projects, KV namespaces, D1 databases, or Workers Builds tokens. No production Worker has been deployed or connected. R2 could not be checked because the API returned a dashboard/enablement error; do not assume R2 is empty.
 - Google/GitHub OAuth, Playwright E2E, application migrations, production secrets/configuration, and deployment remain future steps.

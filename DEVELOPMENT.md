@@ -2,7 +2,7 @@
 
 ## 1. Phase 01 and implementation gate
 
-Phase 01 is approved: all six foundation documents have been reviewed and accepted by the owner. Step 02 has selected React + Vite + TypeScript + Hono on the Cloudflare Vite plugin and added the initial app shell, Worker health route, dependency lockfile, unit smoke test, and build workflow. Before considering Step 02 verified, check the latest GitHub Actions result. Step 03 adds Playwright browser E2E and extends CI; do not treat the current unit/build checks as E2E coverage.
+Phase 01 is approved: all six foundation documents have been reviewed and accepted by the owner. Step 02 has selected React + Vite + TypeScript + Hono on the Cloudflare Vite plugin and added the initial app shell, Worker health route, dependency lockfile, unit smoke test, and build workflow. The initial scaffold commit (7ee9676) passed GitHub Actions [run #1](https://github.com/papiagasmus/nextaction/actions/runs/39949446740); Step 02's build/smoke-check acceptance criterion is met. Step 03 adds Playwright browser E2E and extends CI; do not treat the current unit/build checks as E2E coverage.
 
 ## 2. Working rules
 
@@ -19,8 +19,8 @@ Phase 01 is approved: all six foundation documents have been reviewed and accept
 
 Follow this sequence as the execution order. P0–P3 labels in the next section describe work priority/scope only; they do not override this sequence.
 
-1. **Step 02 — Minimal app foundation:** select one framework compatible with Cloudflare Workers and server-side Supabase Auth; create the minimum application root, safe environment configuration, health route, and committed lockfile.
-2. **Step 03 — Browser E2E and CI:** establish Playwright and GitHub Actions early, plus format/lint, typecheck, unit tests, build, migration validation, and secret detection.
+1. **Completed Step 02 — Minimal app foundation:** React + Vite + TypeScript with Hono API routes in the Cloudflare Worker app; the shell, health endpoint, environment placeholders, lockfile, unit smoke test, and build check are committed. The initial scaffold build/smoke test passed in [GitHub Actions run #1](https://github.com/papiagasmus/nextaction/actions/runs/39949446740).
+2. **Step 03 — Browser E2E and CI:** add Playwright browser tests and extend the existing GitHub Actions workflow for critical user journeys, then add the appropriate migration/security checks as those features are implemented.
 3. **Step 04 — One Supabase project:** connect the hosted project through safe environment configuration; create initial versioned migrations and ownership/RLS tests. CI must use local/ephemeral test infrastructure or safe fixtures by default.
 4. **Step 05 — Login and URL onboarding:** configure Google/GitHub OAuth through Supabase Auth; implement callback/session handling, URL-state preservation, favicon fallback, role choice, and the dashboard CTA behavior.
 5. **Step 06 — Publisher onboarding and ownership:** implement workspace invitations/role controls, manual workflow setup, DNS domain verification, permission checks, and audit events.

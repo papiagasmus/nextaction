@@ -49,7 +49,7 @@ This section records what was observed through the connected platform APIs. It i
 
 - [x] Owner reviewed and approved all six foundation documents.
 - [x] Selected React + Vite + TypeScript UI and Hono API on the Cloudflare Vite plugin; committed the dependency lockfile.
-- [x] Added the minimum UI shell, Worker health route, environment placeholders, unit smoke test, and GitHub Actions build/smoke-check workflow. Verify the latest CI run before declaring this step build-verified.
+- [x] Added the minimum UI shell, Worker health route, environment placeholders, unit smoke test, and GitHub Actions build/smoke-check workflow. The initial scaffold passed [run #1](https://github.com/papiagasmus/nextaction/actions/runs/39949446740) for code commit 7ee96768d9a25d3184bfb7d2f137a02e7ed11d53.
 - [ ] In Step 03, add Playwright browser tests and extend CI for critical browser journeys.
 - [ ] Configure the two Supabase Auth providers: Google and GitHub.
 - [ ] Create provider OAuth applications and configure the callback URL shown by Supabase in each provider console.
