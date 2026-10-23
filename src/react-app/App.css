@@ -1,0 +1,22 @@
+.app-shell { min-height: 100vh; display: flex; flex-direction: column; }
+.site-header, .site-footer { width: min(1120px, calc(100% - 48px)); margin-inline: auto; }
+.site-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-block: 28px; border-bottom: 1px solid var(--line); }
+.wordmark { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); font-size: 18px; font-weight: 700; letter-spacing: -0.04em; text-decoration: none; }
+.wordmark-mark { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--ink); border-radius: 9px; font-size: 20px; font-weight: 500; letter-spacing: -0.08em; }
+.header-label, .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; }
+.header-label { color: var(--muted); text-align: right; }
+.main-content { width: min(900px, calc(100% - 48px)); margin: auto; padding-block: clamp(72px, 12vh, 136px); }
+.hero { max-width: 720px; }
+.eyebrow { margin: 0 0 20px; color: var(--muted); }
+.hero h1 { max-width: 680px; margin: 0; font-size: clamp(42px, 7vw, 76px); font-weight: 600; line-height: 1.04; letter-spacing: -0.065em; }
+.hero-copy { max-width: 620px; margin: 24px 0 0; color: var(--muted); font-size: clamp(16px, 2vw, 19px); line-height: 1.7; }
+.status-card { max-width: 520px; margin-top: 46px; padding: 22px 24px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,0.78); }
+.status-heading { display: flex; align-items: center; gap: 10px; }
+.status-heading h2 { margin: 0; font-size: 15px; font-weight: 600; }
+.status-dot { width: 9px; height: 9px; border-radius: 999px; background: #8c929b; }
+.status-healthy .status-dot { background: #24764b; }
+.status-unavailable .status-dot { background: #b24a40; }
+.status-card p { margin: 13px 0 14px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+.status-card code { display: inline-block; padding: 5px 8px; border-radius: 6px; background: #efefed; color: var(--ink); font-size: 12px; }
+.site-footer { display: flex; flex-wrap: wrap; gap: 9px; padding-block: 22px 30px; color: var(--muted); font-size: 12px; }
+@media (max-width: 560px) { .site-header, .site-footer, .main-content { width: calc(100% - 32px); } .site-header { align-items: flex-start; flex-direction: column; } .header-label { text-align: left; } .status-card { padding: 18px; } }

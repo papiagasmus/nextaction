@@ -9,6 +9,7 @@ The initial target market is the United States and global SaaS builders. Product
 - **One canonical code repository:** this repository, papiagasmus/nextaction. No separate long-lived spike repo or second backend by default.
 - **One hosted Supabase project:** the project named nextaction, ref zrtosqxesdvcijatsito. Use Postgres and Supabase Auth; do not create another hosted Supabase project without an explicit decision.
 - **Production runtime:** Cloudflare Workers. Keep the web app and its server-side routes in one application where practical. Supabase Edge Functions are not the default application backend.
+- **Application stack selected in Step 02:** React + Vite + TypeScript for the UI, with Hono API routes in the same Worker through Cloudflare's Vite plugin. This is one application, not separate frontend/backend services.
 - **Login providers:** Google and GitHub OAuth through Supabase Auth. The landing page is not an email-capture form.
 - **Product presentation:** English copy for a US/global SaaS audience, Jakarta Sans as the primary font, and the previously selected N-mark visual direction. Landing copy should not position NextAction as a demo/prototype or claim unreleased functionality as live.
 - **Landing URL flow:** an unauthenticated user submits a SaaS URL, the URL is validated and its favicon is shown when available, and the URL intent is preserved through login. After OAuth callback, onboarding opens with the URL retained. Once signed in, the primary landing CTA says “Go to dashboard”.
@@ -34,6 +35,28 @@ The initial target market is the United States and global SaaS builders. Product
 
 If a submitted URL is well-formed but the site blocks automated reading, the user can continue manually. AI discovery failure must not block onboarding.
 
+## Running locally
+
+Requirements: Node.js 22 and npm.
+
+```sh
+npm ci
+npm run dev
+```
+
+The first application shell reports the status of the Worker API at /api/health. It is an engineering health page, not the finished product landing/onboarding flow.
+
+Useful checks:
+
+```sh
+npm run lint
+npm test
+npm run build
+npm run check
+```
+
+The .env.example and .dev.vars.example files show placeholder names for the future Supabase integration. Do not put Supabase secret/service-role keys in VITE_ variables or commit real credentials.
+
 ## Documents
 
 - [PRODUCT.md](./PRODUCT.md) — user journeys, workflow semantics, role behavior, and MVP boundaries.
@@ -44,12 +67,16 @@ If a submitted URL is well-formed but the site blocks automated reading, the use
 
 ## Current status — 2026-10-23
 
-This is a **documentation-only foundation**; application code, migrations for application tables, CI workflows, and E2E tests have not yet been created.
+Phase 01 (specification review) is approved. Step 02 has added the initial application skeleton and a build/smoke-check workflow.
 
-- GitHub: papiagasmus/nextaction, default branch main; six foundation documents have been committed.
-- Supabase: project nextaction, ref zrtosqxesdvcijatsito, active. No public application tables, application migration records, or Edge Functions were found in the initial inspection.
-- Cloudflare: the API checks found no Workers scripts, Pages projects, KV namespaces, D1 databases, or Workers Builds tokens. The workers.dev subdomain was not initialized. R2 could not be checked because the API returned a dashboard/enablement error; do not assume R2 is empty.
-- These are point-in-time checks, not a full audit of every Cloudflare product, DNS record, secret, account permission, or billing setting.
+- GitHub: papiagasmus/nextaction, default branch main; six approved foundation documents remain in the repository.
+- Application: React + Vite + TypeScript UI and Hono API in the same Cloudflare Worker app, based on the official Cloudflare Vite/React starter. A minimal Worker health route and one Node.js unit test are included.
+- CI: a GitHub Actions workflow runs install, lint, unit test, build, and Wrangler dry-run checks. Verify its latest run before calling the scaffold build-verified.
+- Supabase: project nextaction, ref zrtosqxesdvcijatsito, active. No application tables, application migration records, or Edge Functions were found. The application is not connected to Supabase yet.
+- Cloudflare: initial API checks found no Workers scripts, Pages projects, KV namespaces, D1 databases, or Workers Builds tokens. No production Worker has been deployed or connected. R2 could not be checked because the API returned a dashboard/enablement error; do not assume R2 is empty.
+- Google/GitHub OAuth, Playwright E2E, application migrations, production secrets/configuration, and deployment remain future steps.
+
+These are point-in-time observations, not a full audit of every Cloudflare product, DNS record, secret, account permission, or billing setting.
 
 ## Change control
 

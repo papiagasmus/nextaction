@@ -2,9 +2,7 @@
 
 ## 1. Phase 01 and implementation gate
 
-Phase 01 is documentation only. Review and approve all six foundation documents before creating application code. Do not select a framework, create the app skeleton, connect deployments, add migrations, or start Step 02 as part of the specification review.
-
-After approval, implement in dependency order. Browser automation and CI must be established early, not postponed until the app is almost finished.
+Phase 01 is approved: all six foundation documents have been reviewed and accepted by the owner. Step 02 has selected React + Vite + TypeScript + Hono on the Cloudflare Vite plugin and added the initial app shell, Worker health route, dependency lockfile, unit smoke test, and build workflow. Before considering Step 02 verified, check the latest GitHub Actions result. Step 03 adds Playwright browser E2E and extends CI; do not treat the current unit/build checks as E2E coverage.
 
 ## 2. Working rules
 
@@ -43,7 +41,7 @@ The ordered steps above are authoritative for execution even when a capability's
  
 ## 4. Framework and structure
 
-The exact framework is selected in Step 02 after a small compatibility comparison; this document deliberately does not preselect a framework. Keep one application root and these logical areas:
+The selected stack is React + Vite + TypeScript with Hono API routes inside the same Cloudflare Worker app. Keep one application root and these logical areas:
 - app/routes and server handlers
 - feature modules for auth, onboarding, publisher, advertiser, campaigns, and ad events
 - server-only Supabase, authorization, validation, URL fetch/discovery, and audit modules

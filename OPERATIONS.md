@@ -8,7 +8,7 @@ This section records what was observed through the connected platform APIs. It i
 - Repository: papiagasmus/nextaction
 - Default branch: main
 - Access: authenticated GitHub connector reported admin/maintain/push/pull/triage permissions.
-- Contents at this check: six foundation documents; no application implementation, migrations for app tables, CI workflows, or E2E tests have been created yet.
+- Contents at this check: six foundation documents plus the initial React/Vite/Hono Worker scaffold, lockfile, health endpoint, one Node unit test, and a GitHub Actions build/smoke-check workflow. Product routes, Supabase integration, application migrations, Playwright E2E, and deployment are not yet present.
 - The repository is the only canonical application repository.
 
 ### Supabase
@@ -47,17 +47,16 @@ This section records what was observed through the connected platform APIs. It i
 
 ## 3. Configuration checklist before implementation and preview
 
-- [ ] Owner reviews and approves all six foundation documents.
-- [ ] In Step 02, choose one Cloudflare Workers-compatible framework and commit a dependency lockfile.
-- [ ] Add the minimal application, health route, environment schema, and CI.
+- [x] Owner reviewed and approved all six foundation documents.
+- [x] Selected React + Vite + TypeScript UI and Hono API on the Cloudflare Vite plugin; committed the dependency lockfile.
+- [x] Added the minimum UI shell, Worker health route, environment placeholders, unit smoke test, and GitHub Actions build/smoke-check workflow. Verify the latest CI run before declaring this step build-verified.
+- [ ] In Step 03, add Playwright browser tests and extend CI for critical browser journeys.
 - [ ] Configure the two Supabase Auth providers: Google and GitHub.
 - [ ] Create provider OAuth applications and configure the callback URL shown by Supabase in each provider console.
 - [ ] Configure Supabase Auth Site URL and allowed application redirect URLs for the intended local and deployed app routes. Use exact, controlled routes and test URL preservation.
 - [ ] Keep provider client secrets in provider/Supabase configuration, not in Git or browser variables.
-- [ ] Build an initial versioned migration and test a clean database apply.
-- [ ] Add Playwright tests before feature growth.
-- [ ] During Step 09, configure the Publisher SDK/beacon/API integration and scoped credential lifecycle; never expose secret credentials or Supabase privileged keys in the browser.
-- [ ] Set Cloudflare Worker secrets through the secure secrets facility only when required.
+- [ ] In Step 04, add Supabase client integration and initial versioned migrations; test a clean database apply.
+- [ ] Set Cloudflare Worker runtime variables/secrets through the appropriate secure configuration only when required.
 - [ ] Connect the main branch to a production Worker only after CI and basic smoke tests pass.
 - [ ] Decide whether a workers.dev subdomain is needed; opening Workers & Pages in the dashboard may initialize one.
 - [ ] Inspect/enable R2 only if a demonstrated application requirement needs object storage.

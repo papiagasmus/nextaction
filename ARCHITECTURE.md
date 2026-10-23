@@ -11,7 +11,7 @@ Use the smallest architecture that can support the secure MVP.
 - **AI provider:** called only from server-side code for an explicit workflow-discovery request.
 - **Browser:** UI only; never holds server secrets or decides authorization.
 
-The exact full-stack framework is intentionally deferred to Phase 02. The choice must be Cloudflare Workers-compatible, actively supported, and simple to test. Do not start implementing a framework or application in Phase 01.
+The initial application stack was selected and scaffolded in Step 02: React + Vite + TypeScript for a client-side UI, Hono for API routes, and Cloudflare's Vite plugin for the single Worker application. The initial shell is intentionally small; product flows are implemented in later steps. It is not a separate frontend deployment plus backend deployment.
 
 Do not add a second backend, a second hosted Supabase project, a long-lived spike repository, or extra Cloudflare data services without a concrete need, documented trade-off, and owner approval.
 
@@ -19,19 +19,18 @@ Do not add a second backend, a second hosted Supabase project, a long-lived spik
 
 The canonical repository is papiagasmus/nextaction; its default branch is main. Production code must ultimately deploy from this repository, not from an abandoned spike repository.
 
-Use one application root and clear logical boundaries. The framework-specific names will be finalized in Phase 02, but the repository should contain these responsibilities:
+Use one application root and clear logical boundaries. The initial scaffold uses:
 
-- Application entry/routes: pages and server-side request handlers.
-- Feature modules: auth, onboarding, publisher, advertiser, campaigns, ad serving/events.
-- Server-only modules: Supabase integration, URL fetching/workflow discovery, authorization, validation, rate limiting, and audit handling.
-- Shared schemas/types: workflow/event contracts and input/output validation.
-- Public assets: static assets including branding and fallback favicon UI.
-- Tests: unit, integration/database, security regression, and browser E2E.
-- supabase/migrations: versioned SQL migration files.
-- .github/workflows: CI and later deployment workflows.
+- src/react-app/: React UI and styles.
+- src/worker/: Hono API routes running inside the same Cloudflare Worker app.
+- src/shared/: small shared contracts/helpers that can be tested without cloud services.
+- tests/: Node built-in unit tests initially; browser E2E is added in Step 03.
+- supabase/migrations/: versioned SQL migration files to be created in Step 04.
+- .github/workflows/: current build/smoke-check workflow; Playwright CI is added in Step 03.
+- Root config: Vite, Wrangler, TypeScript, ESLint, package manifest, and lockfile.
 - Root documents: README.md, PRODUCT.md, ARCHITECTURE.md, DATA_SECURITY.md, DEVELOPMENT.md, OPERATIONS.md.
 
-Do not create a monorepo or additional application package without a need. Avoid putting privileged server code in client-importable modules.
+Feature areas such as auth, onboarding, publisher, advertiser, campaigns, and ad events are added as needed within this application. Do not create a monorepo or extra service without an explicit need. Keep secrets and privileged server code out of client-importable modules.
 
 ## 3. Current Supabase project
 
@@ -49,15 +48,21 @@ Supabase Edge Functions are not the default application runtime. Add one only wh
 
 ## 4. Authentication and session flow
 
-Required providers are Google and GitHub OAuth through Supabase Auth. Official implementation references:
+Required providers are Google and GitHub OAuth through Supabase Auth. Official references:
 - Google provider: https://supabase.com/docs/guides/auth/social-login/auth-google
 - GitHub provider: https://supabase.com/docs/guides/auth/social-login/auth-github
 - Redirect URL allow-list: https://supabase.com/docs/guides/auth/redirect-urls
-- Supabase server-side auth package guidance: https://supabase.com/docs/guides/auth/server-side
+- Supabase package choice for browser and Worker APIs: https://supabase.com/docs/guides/auth/choosing-a-server-package
 
-Use a single session model appropriate for the selected framework, with the OAuth PKCE flow where the server-side auth model requires it. If the framework uses server-rendered pages/cookies, implement secure session cookies and correct cache behavior. If authentication is passed per request as a bearer token, validate that token server-side. Do not mix localStorage, cookies, and duplicated custom sessions without an explicit design.
+The selected UI is a client-side React SPA, so keep the initial auth model simple:
+1. Use one browser Supabase client from @supabase/supabase-js for Google/GitHub OAuth and the user's Supabase Auth session.
+2. Use Supabase's supported OAuth/PKCE flow and callback handling; do not invent a second app-specific auth cookie/session system.
+3. Preserve a pending website URL as flow state separately from the auth session, and accept only an internal allow-listed post-login callback path.
+4. Calls to protected Worker API routes send the current Supabase access token as an Authorization: Bearer header.
+5. In Step 04, use the supported @supabase/server integration for Worker requests to validate the caller token and create a caller-scoped client that respects RLS. Never use the admin/secret client for ordinary user CRUD.
+6. If the session is absent, expired, or invalid, a protected API returns an appropriate unauthenticated response; the UI must recover without silently granting access.
 
-Provider callback URLs and allowed post-login redirects must be configured explicitly. The post-login destination must be an internal allow-listed route; an arbitrary user-supplied website URL is data to preserve as onboarding intent, not a redirect target. Test cookie/code-verifier propagation if the chosen PKCE flow uses it. Never trust decoded-but-unverified claims for authorization; validate the session/user server-side.
+Do not mix cookie-based SSR sessions, manually persisted tokens, and a second custom session system. A publishable key is public configuration, not proof of authorization. Never trust decoded-but-unverified claims for permissions, and never accept an arbitrary external website URL as an OAuth return destination.
 
 ## 5. Landing URL and onboarding request flow
 
@@ -156,15 +161,16 @@ Initial intended footprint:
 
 Use a synchronous design for the first vertical slice. Add services only when measured traffic or correctness needs justify them and the current cost/limits have been checked.
 
-## 13. Framework and deployment selection
+## 13. Framework and deployment decision
 
-Phase 02 must choose one Workers-compatible framework and record the choice in the repository. Compare only a small shortlist on:
-- Cloudflare-supported deployment/adapter path
-- compatibility with OAuth and server-side Supabase Auth
-- ease of local development and Playwright testing
-- TypeScript support and build simplicity
-- free-tier practicality and operational complexity
+Selected in Step 02:
+- React + Vite + TypeScript for the UI.
+- Hono for HTTP API routes.
+- Cloudflare Vite plugin + Wrangler to run/deploy one Worker app with frontend assets and API routes together.
+- Node's built-in test runner for lightweight unit tests without adding a test framework dependency at bootstrap.
 
-Cloudflare's current full-stack framework guide: https://developers.cloudflare.com/workers/static-assets/routing/full-stack-application/
+This follows Cloudflare's official [Vite + React Workers template](https://github.com/cloudflare/templates/tree/main/vite-react-template) and its [React + Vite Workers guide](https://developers.cloudflare.com/workers/framework-guides/web-apps/react/). Cloudflare documents the Vite plugin as running Worker code in the Workers runtime locally and supporting Vite builds/previews: https://developers.cloudflare.com/workers/local-development/vite-plugin/.
 
-Do not begin application implementation until Phase 01's six documents are approved.
+Why this choice: it avoids keeping a separate frontend and API service, avoids adding a full SSR/session-cookie framework before it is needed, and gives NextAction a simple path for a React UI plus protected Worker APIs. It also keeps the path open for browser Playwright tests in Step 03.
+
+The initial scaffold includes a minimal UI, GET /api/health, one unit test for the health payload, a dependency lockfile, and a build/smoke-check workflow. It does not yet include Supabase client integration, OAuth configuration, application migrations, Playwright, a production Worker deployment, or product onboarding routes.
