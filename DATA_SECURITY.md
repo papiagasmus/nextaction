@@ -85,7 +85,19 @@ NextAction needs the declared workflow's object, action/event, and output/result
 - Enforce explicit workflow, publisher, platform, and legal policy restrictions when configured. Such rules must be based on the declared context and explicit policy, not undisclosed scanning of private contents.
 - Campaign creative and destination URLs are untrusted and require review, URL validation, safe rendering, and click protection.
 
-## 8. AI-assisted workflow discovery
+## 8. Publisher integration credentials and event security
+
+The Publisher SDK/beacon/API uses a publisher-scoped integration credential/key model, defined during Step 09. Credentials must be revocable/rotatable and rate-limited.
+
+- Bind the integration identity to a specific Publisher and permitted workflow set.
+- Validate verified-domain state and workflow/campaign eligibility on the server.
+- A browser-visible publisher identifier may identify a publisher but is not secret and does not prove permission to create trusted events or perform privileged actions.
+- Keep secret credentials server-side; never embed Supabase service-role/secret keys or general administrative credentials into the SDK or browser.
+- Validate event type, payload shape, allowed size, timestamp/replay protections where used, and publisher/workflow association.
+- Apply deduplication to impression/click accounting and rate limits to avoid abuse.
+- Do not accept underlying object/document contents as event context.
+
+## 9. AI-assisted workflow discovery
 
 The AI feature only reads accessible public product/marketing pages to propose workflow candidates. The fetched page is untrusted data, never instructions to the model or application.
 
@@ -98,7 +110,7 @@ The AI feature only reads accessible public product/marketing pages to propose w
 - Empty output or a model/fetch/parse error must result in an honest explanation and a manual fallback, not fabricated candidates.
 - Logs capture stage, timings, status, and safe error category, not full page contents by default.
 
-## 9. Domain ownership verification
+## 10. Domain ownership verification
 
 Publisher verification uses a server-checked DNS TXT challenge.
 
@@ -111,7 +123,7 @@ Publisher verification uses a server-checked DNS TXT challenge.
 - Do not enable live publisher serving until server-side verification succeeds.
 - Audit verification requested, succeeded, failed, expired, and owner-changed events without logging challenge secrets.
 
-## 10. Workspace invites, roles, and audit
+## 11. Workspace invites, roles, and audit
 
 - Invitations are scoped to a workspace and intended recipient, use a one-time token, expire, and can be revoked before acceptance.
 - Only the authenticated intended recipient can accept an invitation.
@@ -120,7 +132,7 @@ Publisher verification uses a server-checked DNS TXT challenge.
 - Platform-admin grant/revocation, invite changes, membership changes, domain verification, workflow activation, campaign review/activation, and financial configuration are audited.
 - Audit records include actor, action, resource, timestamp, and safe metadata. They must not contain passwords, OAuth secrets, access/refresh tokens, challenge tokens, raw Authorization headers, or unnecessary personal data.
 
-## 11. Security regression tests required
+## 12. Security regression tests required
 
 - Google and GitHub OAuth start/callback/error/expired-state paths.
 - Invalid redirect targets and preservation of URL onboarding state.
@@ -131,3 +143,4 @@ Publisher verification uses a server-checked DNS TXT challenge.
 - Prompt injection in page text, malformed model output, and unsupported AI claims.
 - Ad matching does not require object contents; explicit configured restrictions still apply.
 - Click/impression replay, rate abuse, and campaign permission bypass attempts.
+- Publisher integration credential scope, revocation/rotation, spoofing, and verified-domain enforcement.
