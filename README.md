@@ -10,6 +10,7 @@ The initial target market is the United States and global SaaS builders. Product
 - **One hosted Supabase project:** the project named nextaction, ref zrtosqxesdvcijatsito. Use Postgres and Supabase Auth; do not create another hosted Supabase project without an explicit decision.
 - **Production runtime:** Cloudflare Workers. Keep the web app and its server-side routes in one application where practical. Supabase Edge Functions are not the default application backend.
 - **Login providers:** Google and GitHub OAuth through Supabase Auth. The landing page is not an email-capture form.
+- **Product presentation:** English copy for a US/global SaaS audience, Jakarta Sans as the primary font, and the previously selected N-mark visual direction. Landing copy should not position NextAction as a demo/prototype or claim unreleased functionality as live.
 - **Landing URL flow:** an unauthenticated user submits a SaaS URL, the URL is validated and its favicon is shown when available, and the URL intent is preserved through login. After OAuth callback, onboarding opens with the URL retained. Once signed in, the primary landing CTA says “Go to dashboard”.
 - **Onboarding roles:** the user chooses Publisher, Advertiser, or Both before the role-specific product setup.
 - **Publisher workflows:** manual entry is the dependable baseline. AI-assisted discovery is optional, explicitly requested, reviewable, and never silently activates a workflow.
