@@ -66,9 +66,10 @@ Provider callback URLs and allowed post-login redirects must be configured expli
 3. Show favicon on a best-effort basis. A favicon failure must not invalidate an otherwise well-formed URL.
 4. A well-formed URL, public reachability, successful text extraction, and verified ownership are distinct states.
 5. If unauthenticated, begin Google/GitHub OAuth and preserve the validated URL as onboarding intent. Use a safe internal callback and prevent open redirects.
-6. After callback, exchange the OAuth code/session using the selected auth model and route to onboarding with the URL prefilled.
-7. Ask Publisher, Advertiser, or Both before the role-specific product setup.
-8. Once onboarding is complete, the primary landing CTA for an authenticated user says “Go to dashboard”. Additional websites are added from the dashboard.
+6. After callback, exchange the OAuth code/session using the selected auth model. If a pending URL intent exists, resume onboarding with that URL prefilled—even for a returning user; that explicit connect action takes precedence over the default dashboard destination.
+7. If there is no pending URL intent, send new users to onboarding and returning users with completed onboarding to the dashboard.
+8. Ask Publisher, Advertiser, or Both before the role-specific product setup.
+9. Once onboarding is complete, the primary landing CTA for an authenticated user says “Go to dashboard”. Additional websites are added from the dashboard.
 
 If the site blocks automated fetching, manual setup remains available. The app must not require a successful AI scrape merely to authenticate or start onboarding.
 
@@ -131,7 +132,20 @@ The event payload should contain the minimum needed to identify the publisher/wo
 
 Campaign state changes and ad serving must check authorization, campaign approval/activation, publisher verification, workflow eligibility, policy restrictions, and rate/fraud controls on the server.
 
-## 11. Initial infrastructure footprint
+## 11. Publisher SDK/beacon and event contract
+
+The planned event path needs a small Publisher SDK or beacon/API endpoint so an integrated SaaS can send a declared workflow event and receive an eligible-ad response. Step 09 defines the concrete request/response schema and integration package.
+
+The event contract must:
+- Identify the verified publisher, declared workflow, and event type.
+- Carry only the minimum object/action/output metadata needed for matching.
+- Never require or accept the underlying end-user document/object contents for ad targeting.
+- Use a publisher-scoped, revocable integration credential or key model and enforce rate limits.
+- Never treat a browser-visible identifier as a secret or authorization proof.
+- Validate the publisher's verification state and workflow eligibility on the server.
+- Handle malformed requests, replay, duplicate impressions/clicks, and invalid campaign state safely.
+
+## 12. Initial infrastructure footprint
 
 Initial intended footprint:
 - one GitHub repository
@@ -142,7 +156,7 @@ Initial intended footprint:
 
 Use a synchronous design for the first vertical slice. Add services only when measured traffic or correctness needs justify them and the current cost/limits have been checked.
 
-## 12. Framework and deployment selection
+## 13. Framework and deployment selection
 
 Phase 02 must choose one Workers-compatible framework and record the choice in the repository. Compare only a small shortlist on:
 - Cloudflare-supported deployment/adapter path
