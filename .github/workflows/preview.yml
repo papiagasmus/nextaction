@@ -1,0 +1,75 @@
+name: Cloudflare Worker Preview
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  preview:
+    name: Build nextaction-preview Worker
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out pull request
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Check whether the preview credential is configured
+        id: auth
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Explain one-time preview setup
+        if: steps.auth.outputs.available != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment "${{ github.event.pull_request.number }}" --edit-last --create-if-none --body "Live browser preview is waiting for the one-time Cloudflare credential setup. Add the repository Actions secret CLOUDFLARE_API_TOKEN at https://github.com/papiagasmus/nextaction/settings/secrets/actions, scoped to this Cloudflare account with Workers Scripts: Edit. Then push a new commit to this PR; the workflow will publish the preview URL automatically. The dedicated Worker is named nextaction-preview; production Worker nextaction is not touched."
+      - name: Install dependencies
+        if: steps.auth.outputs.available == 'true'
+        run: npm ci
+      - name: Build application
+        if: steps.auth.outputs.available == 'true'
+        run: npm run build
+      - name: Publish or update the dedicated nextaction-preview Worker
+        if: steps.auth.outputs.available == 'true'
+        id: preview
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: fcda7c36aebd76d5a8cf7f1a009795b6
+        run: |
+          set -euo pipefail
+          npx wrangler deploy --name "nextaction-preview"
+          preview_url="https://nextaction-preview.nextactiondev.workers.dev"
+          echo "url=$preview_url" >> "$GITHUB_OUTPUT"
+          echo "Preview URL: $preview_url"
+      - name: Probe preview API health
+        if: steps.auth.outputs.available == 'true'
+        env:
+          PREVIEW_URL: ${{ steps.preview.outputs.url }}
+        run: |
+          set -euo pipefail
+          curl --fail --show-error --silent "$PREVIEW_URL/api/health" | tee /tmp/preview-health.json
+          jq -e '.status == "ok" and .service == "nextaction-worker"' /tmp/preview-health.json
+      - name: Share browser preview
+        if: steps.auth.outputs.available == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PREVIEW_URL: ${{ steps.preview.outputs.url }}
+        run: |
+          gh pr comment "${{ github.event.pull_request.number }}" --edit-last --create-if-none --body "Browser preview: $PREVIEW_URL
+
+          The Worker API health probe passed. This URL is served by the dedicated nextaction-preview Worker. Production Worker nextaction is not changed."

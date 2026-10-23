@@ -27,5 +27,19 @@ jobs:
         run: npm run lint
       - name: Run unit tests
         run: npm test
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      - name: Run browser E2E tests
+        run: npm run test:e2e
+      - name: Upload browser test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Build and validate Worker bundle
         run: npm run check

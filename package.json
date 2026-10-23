@@ -4,15 +4,16 @@
   "type": "module",
   "description": "Workflow-aware advertising network for SaaS products.",
   "scripts": {
-    "dev": "vite",
     "build": "tsc -b && vite build",
-    "typecheck": "tsc -b --pretty false",
-    "lint": "eslint .",
-    "test": "node --test tests/*.test.mjs",
+    "cf-typegen": "wrangler types",
     "check": "npm run build && wrangler deploy --dry-run",
-    "preview": "npm run build && vite preview",
     "deploy": "wrangler deploy",
-    "cf-typegen": "wrangler types"
+    "dev": "vite",
+    "lint": "eslint .",
+    "preview": "npm run build && vite preview",
+    "test": "node --test tests/*.test.mjs",
+    "test:e2e": "playwright test",
+    "typecheck": "tsc -b --pretty false"
   },
   "dependencies": {
     "hono": "4.11.1",
@@ -22,6 +23,7 @@
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.52.1",
     "@eslint/js": "9.39.1",
+    "@playwright/test": "1.64.1",
     "@types/node": "24.10.1",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",

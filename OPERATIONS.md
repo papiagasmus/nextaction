@@ -147,3 +147,15 @@ Do not log secrets, OAuth codes/state, access/refresh tokens, cookies, full Auth
 - [ ] Secrets are configured outside Git and logs.
 - [ ] Deployment and rollback have been tested.
 - [ ] Support and incident logging avoids unnecessary personal data.
+
+
+## Step 03 browser preview setup — 2026-10-23
+
+- Added Playwright desktop and mobile E2E checks to the existing build workflow. Latest verified E2E CI run: https://github.com/papiagasmus/nextaction/actions/runs/39953473998 (all steps succeeded).
+- The Cloudflare account is `fcda7c36aebd76d5a8cf7f1a009795b6`. The account-level workers.dev subdomain is now `nextactiondev`; the requested `nextaction` slug was unavailable, so `nextactiondev` was selected instead.
+- Account inventory previously returned no Worker scripts or Workers Builds tokens. The subdomain setup alone does not deploy an app or create a production Worker.
+- Naming convention set by the owner: production Worker `nextaction`, dedicated review Worker `nextaction-preview`.
+- A dedicated preview Worker named `nextaction-preview` is deployed and reachable at `https://nextaction-preview.nextactiondev.workers.dev`; the page and `/api/health` were verified with HTTP 200.
+- The PR review workflow runs `npx wrangler deploy --name nextaction-preview`, which updates the dedicated preview Worker only; production Worker `nextaction` is not selected by the command.
+- The target account subdomain slug `nextaction` was rejected by Cloudflare as unavailable before `nextactiondev` was created. The current account subdomain remains `nextactiondev`, and changing it is not assumed.
+- **One remaining credential prerequisite:** the repository Actions secret `CLOUDFLARE_API_TOKEN` must be set by the owner. Create a least-privilege token for this Cloudflare account with Workers Scripts: Edit, then save it at https://github.com/papiagasmus/nextaction/settings/secrets/actions. The workflow detects the missing secret and leaves a setup note rather than failing application CI.
