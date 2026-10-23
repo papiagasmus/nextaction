@@ -17,31 +17,30 @@ After approval, implement in dependency order. Browser automation and CI must be
 7. Check current pricing/limits before enabling billable services; obtain owner agreement where required.
 8. A test that could not run must be reported as not run/blocked, not silently counted as passing.
 
-## 3. Implementation sequence after specification approval
+## 3. Step-by-step execution order after specification approval
 
-### P0 — Foundation
-1. Select one simple framework compatible with Cloudflare Workers and compatible with server-side Supabase Auth.
-2. Create the minimum application root, safe environment configuration, a health route, and a committed lockfile.
-3. Establish Playwright browser automation and GitHub Actions CI.
-4. Establish unit/integration test structure, formatting/lint, typecheck, build, migration validation, and secret scanning.
+Follow this sequence as the execution order. P0–P3 labels in the next section describe work priority/scope only; they do not override this sequence.
 
-### P1 — Onboarding and controls
-5. Connect the single hosted Supabase project through safe environment configuration; create the initial migration set and ownership/RLS tests.
-6. Configure and test Google/GitHub OAuth using Supabase Auth; implement callback/session and URL-state preservation.
-7. Implement URL input, validation feedback, best-effort favicon display, CTA state, and onboarding role choice.
-8. Implement workspace invitation/role controls, publisher workflow manual entry, DNS domain verification, and audit events.
-9. Implement campaign APIs for draft, review, edit, approve/reject, activate, and pause.
+1. **Step 02 — Minimal app foundation:** select one framework compatible with Cloudflare Workers and server-side Supabase Auth; create the minimum application root, safe environment configuration, health route, and committed lockfile.
+2. **Step 03 — Browser E2E and CI:** establish Playwright and GitHub Actions early, plus format/lint, typecheck, unit tests, build, migration validation, and secret detection.
+3. **Step 04 — One Supabase project:** connect the hosted project through safe environment configuration; create initial versioned migrations and ownership/RLS tests. CI must use local/ephemeral test infrastructure or safe fixtures by default.
+4. **Step 05 — Login and URL onboarding:** configure Google/GitHub OAuth through Supabase Auth; implement callback/session handling, URL-state preservation, favicon fallback, role choice, and the dashboard CTA behavior.
+5. **Step 06 — Publisher onboarding and ownership:** implement workspace invitations/role controls, manual workflow setup, DNS domain verification, permission checks, and audit events.
+6. **Step 07 — AI website/workflow discovery:** diagnose each stage of public website reading, add structured AI suggestions and evidence where feasible, and preserve manual fallback. This is intentionally tested before campaign APIs are built.
+7. **Step 08 — Campaign management API:** implement campaign draft, review, edit, approval/rejection, activation, and pause.
+8. **Step 09 — Ad path and publisher integration:** implement workflow matching, creatives, serving responses, event tracking, deduplication, rate controls, fraud checks, and explicit policy enforcement.
+9. **Step 10 — Production deployment and verification:** deploy the approved main commit to the canonical Cloudflare Worker only after CI is green; run E2E, security checks, production smoke tests, and rollback verification.
+10. **Step 11 — Ledger, payments, and payout:** after ad events and campaign behavior are reliable, implement transaction ledger, reconciliation, pricing/attribution semantics, and only then payment-provider/payout integration.
 
-### P2 — Ad-serving product
-10. Troubleshoot and implement optional AI-assisted website/workflow discovery with stage-level diagnostics and manual fallback.
-11. Implement the event contract, campaign matching, creatives, ad-serving response, impression/click event tracking, deduplication, rate controls, fraud checks, and explicit policy enforcement.
+## Priority labels (grouping only; not a separate execution sequence)
 
-### P3 — Financial path
-12. Implement a transaction ledger, reconciliation, pricing/attribution semantics, and only later payment-provider/payout integration.
+- **P0 — Foundation:** specification, minimal application, browser E2E, and CI.
+- **P1 — Onboarding and controls:** Supabase connection, login, URL/role onboarding, workspace permissions, publisher domain verification, and campaign management API.
+- **P2 — Ad product:** AI workflow discovery, matching, creative, tracking, publisher integration, and fraud controls.
+- **P3 — Finance:** ledger, payment, and payout.
 
-### Release
-13. Run end-to-end regression, security review, deployment smoke tests, and rollback verification before a production release.
-
+The ordered steps above are authoritative for execution even when a capability's priority label groups it with a different workstream.
+ 
 ## 4. Framework and structure
 
 The exact framework is selected in Step 02 after a small compatibility comparison; this document deliberately does not preselect a framework. Keep one application root and these logical areas:
