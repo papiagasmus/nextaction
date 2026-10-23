@@ -56,6 +56,7 @@ This section records what was observed through the connected platform APIs. It i
 - [ ] Keep provider client secrets in provider/Supabase configuration, not in Git or browser variables.
 - [ ] Build an initial versioned migration and test a clean database apply.
 - [ ] Add Playwright tests before feature growth.
+- [ ] During Step 09, configure the Publisher SDK/beacon/API integration and scoped credential lifecycle; never expose secret credentials or Supabase privileged keys in the browser.
 - [ ] Set Cloudflare Worker secrets through the secure secrets facility only when required.
 - [ ] Connect the main branch to a production Worker only after CI and basic smoke tests pass.
 - [ ] Decide whether a workers.dev subdomain is needed; opening Workers & Pages in the dashboard may initialize one.
@@ -140,6 +141,7 @@ Do not log secrets, OAuth codes/state, access/refresh tokens, cookies, full Auth
 - [ ] Auth/session, URL-state preservation, and cross-user/workspace authorization tests pass.
 - [ ] Publisher domain verification cannot be bypassed.
 - [ ] AI discovery failure leaves the manual path usable.
+- [ ] Publisher SDK/beacon/API integration enforces scoped, revocable credentials and verified-domain ownership.
 - [ ] Ad matching works on declared workflow metadata without reading object contents.
 - [ ] Campaign states and roles are enforced server-side.
 - [ ] Impression/click endpoints have replay and rate controls.
