@@ -52,8 +52,9 @@ When an unauthenticated user submits a URL:
 1. Validate the URL before starting login.
 2. Preserve the normalized URL as onboarding intent through OAuth.
 3. Return to the app's own allowed callback route after login.
-4. Open onboarding with the URL prefilled.
-5. Never use an arbitrary external URL as an OAuth return destination, and do not lose the onboarding intent on callback or refresh.
+4. If a pending website URL intent exists, resume onboarding with that URL prefilled—even if this is a returning user. This specific connect action takes precedence over the normal post-login dashboard destination.
+5. If no pending URL intent exists, new users enter onboarding and returning users who have completed onboarding go to the dashboard.
+6. Never use an arbitrary external URL as an OAuth return destination, and do not lose the onboarding intent on callback or refresh.
 
 When an authenticated user has not completed onboarding, a valid submitted URL opens onboarding with the URL prefilled. For an already-onboarded user, the primary landing CTA leads to the dashboard; connecting an additional site is initiated from the dashboard.
 
@@ -121,7 +122,19 @@ Do not automatically suppress or block an ad solely because a workflow's object 
 
 Campaign creative/destination still requires review and safe output handling. Impression/click events need deduplication, rate limits, and abuse/fraud controls.
 
-## 10. Campaign lifecycle
+## 10. Publisher integration contract
+
+A Publisher needs a documented way to send a declared workflow event from its SaaS to NextAction and receive an eligible-ad response. The planned MVP includes a small SDK or beacon/API integration and a publisher-scoped integration key or credential. The exact wire format and credential model are implementation decisions for the event-integration work in Step 09, not decisions to improvise while building the landing page.
+
+The integration contract must:
+- Identify the verified publisher and declared workflow without sending the underlying object contents.
+- Accept only the minimal object/action/output metadata and identifiers needed for matching.
+- Prevent an unverified publisher or unrelated publisher from using another publisher's integration.
+- Support credential revocation/rotation and rate limits.
+- Treat any browser-visible identifier as public, not as proof of authority; secret credentials must stay server-side.
+- Reject invalid, replayed, or malformed events and avoid duplicate impression/click accounting.
+
+## 11. Campaign lifecycle
 
 Campaigns must support a controlled lifecycle:
 - Create draft
@@ -134,13 +147,13 @@ Campaigns must support a controlled lifecycle:
 
 Only authorized advertisers can manage their campaigns. Only authorized reviewers/admins can approve or reject. A Publisher role by itself does not grant campaign review rights. Any platform-admin grant must be explicit and audited.
 
-## 11. Monetization direction
+## 12. Monetization direction
 
 The working business assumption discussed is USD $1 CPC with a 75% publisher / 25% NextAction split. This is not yet a complete or active billing contract. Before implementation, explicitly settle pricing, eligible-click attribution, invalid-click handling, currency, refunds/chargebacks, balance semantics, payout timing, and terms.
 
 Ledger, payment-provider integration, and automated payouts are later work and must not precede a trustworthy ad-event path.
 
-## 12. MVP scope and exclusions
+## 13. MVP scope and exclusions
 
 ### Included in the planned MVP
 - English landing page with URL input, validation states, favicon when available, and no marketing email-capture form.
@@ -152,6 +165,7 @@ Ledger, payment-provider integration, and automated payouts are later work and m
 - Optional AI-assisted public-website discovery with review, evidence where feasible, and graceful fallback.
 - DNS TXT publisher-domain verification.
 - Campaign draft, edit, review, approval, activation, and pause controls.
+- Publisher SDK/beacon/API event integration with a scoped, revocable integration credential.
 - Workflow matching, ad creative, impression/click tracking, basic deduplication and fraud controls.
 - Server-side authorization, RLS, and audit trail for sensitive actions.
 
@@ -165,7 +179,7 @@ Ledger, payment-provider integration, and automated payouts are later work and m
 - Fully automated financial settlement and payout before ledger/event semantics are proven.
 - A claim that AI can understand every website.
 
-## 13. Product acceptance criteria
+## 14. Product acceptance criteria
 
 The first complete Publisher vertical slice is successful when:
 - A visitor can enter a well-formed URL and see a favicon when available.
