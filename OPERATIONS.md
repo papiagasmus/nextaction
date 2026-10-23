@@ -1,108 +1,148 @@
 # OPERATIONS.md
 
-## 1. Current platform inventory (checked 2026-10-23)
+## 1. Verified platform inventory — 2026-10-23
+
+This section records what was observed through the connected platform APIs. It is not a claim that every product, setting, secret, billing control, or permission has been audited.
 
 ### GitHub
-- Repository: `papiagasmus/nextaction`
-- Default branch: `main`
-- Repository currently has no committed files or code size, as reported by GitHub.
-- Connector access reports admin, maintain, push, pull, triage permissions.
+- Repository: papiagasmus/nextaction
+- Default branch: main
+- Access: authenticated GitHub connector reported admin/maintain/push/pull/triage permissions.
+- Contents at this check: six foundation documents; no application implementation, migrations for app tables, CI workflows, or E2E tests have been created yet.
+- The repository is the only canonical application repository.
 
 ### Supabase
-- Project name: `nextaction`
-- Project ref: `zrtosqxesdvcijatsito`
-- Region: `us-west-2`
-- Status: `ACTIVE_HEALTHY`
-- API URL: `https://zrtosqxesdvcijatsito.supabase.co`
+- Project name: nextaction
+- Project ref: zrtosqxesdvcijatsito
+- Region: us-west-2
+- Status: ACTIVE_HEALTHY
+- Project API URL: https://zrtosqxesdvcijatsito.supabase.co
 - Public application tables: none found.
 - Application migration records: none found.
 - Edge Functions: none found.
-- Security and performance advisors: no lints returned at inspection time.
-- Publishable keys exist. Treat them as configuration identifiers, not proof of row-level authorization.
+- Security and performance advisors: no lint results returned during the initial inspection.
+- Publishable keys exist. Keys are not substitutes for RLS or authorization.
+- Google/GitHub provider credential state and redirect configuration have not been fully verified through this inventory and remain an implementation/setup checklist item.
 
 ### Cloudflare
-- Account: `Nextaction.dev@gmail.com's Account`
-- Account ID: `fcda7c36aebd76d5a8cf7f1a009795b6`
+- Account name: Nextaction.dev@gmail.com's Account
+- Account ID: fcda7c36aebd76d5a8cf7f1a009795b6
 - Workers scripts: none returned.
 - Pages projects: none returned.
 - KV namespaces: none returned.
 - D1 databases: none returned.
 - Workers Builds tokens: none returned.
-- workers.dev subdomain: absent/not initialized at the time of inspection.
-- R2: could not be checked successfully because Cloudflare returned an API 403 stating that R2 must be enabled in the dashboard. Do not interpret this as confirmation that no R2 resources exist.
-- The available API checks did not audit every Cloudflare product, domain, DNS record, account permission, user API token, billing setting, or secret store.
+- A workers.dev subdomain was not initialized during the check.
+- R2 could not be checked: Cloudflare returned an API 403 indicating that R2 must be enabled/handled in the dashboard. Do not interpret this as proof that R2 contains no resources.
+- These checks did not exhaustively audit zones, DNS records, all account/user API tokens, secret stores, billing settings, or every Cloudflare product.
 
-## 2. Initial setup checklist
+## 2. Decisions and operating constraints
 
-- [ ] Review and approve these five foundation documents.
-- [ ] Select the minimum Cloudflare Workers-compatible app framework and pin its dependencies.
-- [ ] Add app skeleton, health route, and CI workflows.
-- [ ] Add required Supabase URL and publishable-key configuration using environment variables; never place privileged keys in client code.
-- [ ] Create initial migrations and confirm a clean database can be provisioned from repository history.
-- [ ] Connect GitHub deployment to the intended production Worker only after the first build and basic tests pass.
-- [ ] Set Worker secrets in the dashboard/secure secret interface without committing their values.
-- [ ] Decide whether a workers.dev subdomain is wanted; opening Workers & Pages in the Cloudflare dashboard may initialize it.
-- [ ] Confirm the free-tier limits and costs for each selected service before enabling it.
-- [ ] Enable/inspect R2 only if the product actually needs object storage.
+- Keep one canonical GitHub repository: papiagasmus/nextaction.
+- Use one hosted Supabase project: zrtosqxesdvcijatsito.
+- Use Cloudflare Workers for the production app runtime.
+- Keep the platform within free-tier limits where practical, but verify current quotas and possible charges before activating services.
+- Do not add a second hosted Supabase project, an extra backend, or other infrastructure without an explicit owner decision.
+- Do not store secret values in Git. Document variable names only.
 
-## 3. Deployment policy
+## 3. Configuration checklist before implementation and preview
 
-- The canonical production app runs on Cloudflare Workers.
-- Deploy production from the approved `main` branch of `papiagasmus/nextaction`.
-- Keep secrets and production settings in platform configuration.
-- Require a green CI run before production deployment.
-- A deployment should identify the commit SHA and be easy to correlate with logs.
-- Do not deploy from abandoned spike repositories or personal branches.
-- Preview deployments may be added after the basic pipeline is tested and should not gain production credentials by default.
+- [ ] Owner reviews and approves all six foundation documents.
+- [ ] In Step 02, choose one Cloudflare Workers-compatible framework and commit a dependency lockfile.
+- [ ] Add the minimal application, health route, environment schema, and CI.
+- [ ] Configure the two Supabase Auth providers: Google and GitHub.
+- [ ] Create provider OAuth applications and configure the callback URL shown by Supabase in each provider console.
+- [ ] Configure Supabase Auth Site URL and allowed application redirect URLs for the intended local and deployed app routes. Use exact, controlled routes and test URL preservation.
+- [ ] Keep provider client secrets in provider/Supabase configuration, not in Git or browser variables.
+- [ ] Build an initial versioned migration and test a clean database apply.
+- [ ] Add Playwright tests before feature growth.
+- [ ] Set Cloudflare Worker secrets through the secure secrets facility only when required.
+- [ ] Connect the main branch to a production Worker only after CI and basic smoke tests pass.
+- [ ] Decide whether a workers.dev subdomain is needed; opening Workers & Pages in the dashboard may initialize one.
+- [ ] Inspect/enable R2 only if a demonstrated application requirement needs object storage.
+- [ ] Verify current free-tier quotas/pricing for every chosen service before enabling it.
 
-## 4. Monitoring and troubleshooting
+## 4. OAuth setup and smoke-test checklist
 
-For any production issue, capture:
-- UTC timestamp and deployment commit
-- affected route and broad symptom
-- error category and request/correlation ID if available
-- whether the issue affects all users or one flow
-- recent relevant changes
+The required login methods are Google and GitHub via Supabase Auth.
 
-Do not put secrets, auth cookies, full authorization headers, full website response bodies, or sensitive user content in logs.
+- Register the provider OAuth app and configure the callback URL given by the Supabase Auth provider settings.
+- Add the app's own callback route to Supabase's allowed redirect URLs.
+- Use the supported PKCE/session flow for the selected application framework.
+- Test provider cancellation, callback error, stale state, and URL intent preservation.
+- Test both provider buttons and verify that each starts the correct OAuth provider.
+- Use deterministic mocked/controlled session tests for each pull request, and separately run an actual OAuth smoke test with dedicated test identities against the configured preview flow.
+- Document the timestamp and outcome of the last real provider smoke tests. A mocked test is not evidence that provider credentials/callbacks are configured correctly.
 
-For workflow discovery, log the separate stages from ARCHITECTURE.md. Distinguish "site fetch failed", "no useful public content found", "AI provider failed", "AI output invalid", and "UI failed to render". These are different faults and should not share one generic catch-all diagnosis.
+Official references:
+- Google OAuth: https://supabase.com/docs/guides/auth/social-login/auth-google
+- GitHub OAuth: https://supabase.com/docs/guides/auth/social-login/auth-github
+- Supabase redirect URLs: https://supabase.com/docs/guides/auth/redirect-urls
+- Cloudflare full-stack Workers apps: https://developers.cloudflare.com/workers/static-assets/routing/full-stack-application/
 
-## 5. Incident handling
+## 5. Deployment policy
 
-1. Identify the affected route, commit, and change.
-2. Contain the impact—for example, disable AI discovery while leaving manual workflow setup available.
-3. Roll back the Worker deployment if a recent release is responsible and rollback is safe.
-4. If credentials may be exposed, rotate them; do not rely only on deleting their source line.
-5. If data integrity or authorization is affected, disable the relevant mutation path and inspect audit/log evidence.
-6. Verify recovery with the exact failed flow and relevant negative tests.
-7. Record a brief incident summary and a regression test.
+- The canonical production app is deployed to Cloudflare Workers from the approved main branch.
+- Require passing CI gates before production deploy.
+- Identify every deployment by its source commit SHA.
+- Keep previews isolated from production credentials and real user data by default.
+- Do not deploy from obsolete spike repositories or personal branches.
+- Verify the actual deployment URL, health route, auth callback, and critical user flows after a deploy.
+- Roll back to a known-good commit/release when a change breaks critical flows, after confirming the rollback is safe for the database schema.
 
-## 6. Backups and recovery
+## 6. Monitoring and troubleshooting
 
-- Treat Supabase as the authoritative persistent store.
-- Confirm which backup and point-in-time recovery facilities are included in the current plan before relying on them; do not assume a feature is enabled.
-- Keep schema recovery reproducible from checked-in migrations.
-- Use documented, tested export/restore procedures before handling valuable production data.
-- Never experiment with destructive reset operations on the sole production project without a verified backup and explicit approval.
+Capture the deployment commit, UTC time, affected route, broad symptom, request/correlation ID if available, and non-sensitive error category.
 
-## 7. Cost guardrails
+For workflow discovery, distinguish:
+- URL validation failed
+- unsafe destination/SSRF policy rejected
+- public site fetch failed/blocked
+- response type or size rejected
+- no useful visible text extracted
+- AI provider error
+- structured output invalid
+- result failed to render
+- user cancelled or did not save suggestions
 
-- Prefer free-tier-compatible services and minimal resource count.
-- Check current provider pricing and limits before enabling new Cloudflare products, Supabase branches, queues, AI APIs, browser rendering, or monitoring retention.
-- Set request-size, time, rate, and AI-token limits.
-- Prevent repeated AI discovery retries from creating an unbounded bill.
-- Revisit the architecture only when actual traffic, reliability, or product requirements justify more infrastructure.
+Do not log secrets, OAuth codes/state, access/refresh tokens, cookies, full Authorization headers, entire fetched website bodies, or private object/document contents.
 
-## 8. Operational readiness criteria
+## 7. Incident handling
 
-Before public production launch:
-- CI and browser E2E are green.
-- Auth/session and cross-user authorization tests pass.
-- Domain verification cannot be bypassed.
-- Workflow discovery failure does not block manual onboarding.
-- Sensitive ad contexts are suppressed according to documented policy.
-- Click/impression endpoints have replay/rate controls.
-- Secrets are configured outside Git.
-- Deployment and rollback can be performed and verified.
-- Support and incident logging avoids collecting unnecessary personal data.
+1. Identify the affected route, release commit, and recent change.
+2. Contain impact; if AI discovery is failing, disable that optional path while leaving manual workflow setup available.
+3. Roll back the Worker release when appropriate and safe.
+4. Rotate exposed credentials; deleting a source line is not enough.
+5. For authorization/data-integrity concerns, disable the affected mutation path and review safe logs/audit records.
+6. Re-run the exact failed flow and relevant security regression tests.
+7. Add a regression test and record a short incident summary.
+
+## 8. Backups and recovery
+
+- Supabase is the authoritative store for persisted application data.
+- Verify which backup/restore facilities are included and enabled under the actual plan; do not assume they are active.
+- Make schema recovery reproducible through versioned migrations.
+- Test export/restore procedures before critical production data exists.
+- Never run destructive reset operations against the only hosted project without a verified recovery plan and explicit owner approval.
+
+## 9. Cost guardrails
+
+- Prefer free-tier-compatible services and minimal infrastructure.
+- Check current limits and pricing before enabling extra Cloudflare products, hosted Supabase branches, queues, AI APIs, browser rendering, or longer log retention.
+- Set request-size/time/rate/token limits to cap abuse and AI cost.
+- Avoid repeated automatic AI retries; discovery is an explicit user action and must be bounded.
+- Revisit architecture only when measured traffic, reliability, or product requirements justify it.
+
+## 10. Production readiness checklist
+
+- [ ] CI and browser E2E are green and skipped tests are visible.
+- [ ] Google and GitHub OAuth real smoke tests pass in the intended deployed environment.
+- [ ] Auth/session, URL-state preservation, and cross-user/workspace authorization tests pass.
+- [ ] Publisher domain verification cannot be bypassed.
+- [ ] AI discovery failure leaves the manual path usable.
+- [ ] Ad matching works on declared workflow metadata without reading object contents.
+- [ ] Campaign states and roles are enforced server-side.
+- [ ] Impression/click endpoints have replay and rate controls.
+- [ ] Secrets are configured outside Git and logs.
+- [ ] Deployment and rollback have been tested.
+- [ ] Support and incident logging avoids unnecessary personal data.
