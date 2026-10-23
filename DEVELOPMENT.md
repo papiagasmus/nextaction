@@ -166,5 +166,6 @@ A feature is done only when intended behavior is reproducible, relevant tests pa
 - Run `npm ci`, `npx playwright install chromium`, then `npm run test:e2e` locally.
 - The Playwright suite runs against the Vite/Cloudflare local Worker runtime in desktop Chromium and a mobile Chromium profile. It checks the shell render, browser runtime errors, `GET /api/health`, and horizontal overflow.
 - GitHub Actions retains the Playwright HTML report and failure traces as an artifact for seven days.
-- The PR preview workflow uses the single `owner-review` Cloudflare Worker Preview alias and runs an HTTP health probe before posting the preview URL. It must only use `wrangler preview`; do not change it to `wrangler deploy` as part of browser-review work.
-- One-time preview credential setup is documented in README.md. The account-level workers.dev subdomain currently used for this project is `nextactiondev`; no production Worker is being deployed by this setup.
+- Worker naming rule: the production Worker is `nextaction`; the review Worker is `nextaction-preview`. The review workflow builds the same repo and runs `wrangler deploy --name nextaction-preview`, so the production Worker `nextaction` is not changed.
+- The workflow probes `https://nextaction-preview.nextactiondev.workers.dev/api/health` and posts the stable preview URL to the PR only when the health response matches the expected payload.
+- One-time preview credential setup is documented in README.md. The account-level Workers subdomain is currently `nextactiondev`; Cloudflare rejected `nextaction` as an available account subdomain slug. The standard hostname includes both Worker name and account subdomain.
