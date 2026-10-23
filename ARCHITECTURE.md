@@ -1,100 +1,156 @@
 # ARCHITECTURE.md
 
-## 1. Architectural decision
+## 1. Locked architecture
 
-Use the smallest architecture that supports a secure first release.
+Use the smallest architecture that can support the secure MVP.
 
-- **GitHub:** source code, pull requests, CI, migration files, and project documentation.
-- **Cloudflare Workers:** primary application runtime, HTTP endpoints, and production deployment target.
-- **Supabase:** one managed Postgres/Auth project for application persistence and identity.
-- **External AI/provider APIs:** used only through server-side code and only for a defined feature.
-- **Browser:** presents the product and calls authenticated APIs; it must never receive server secrets.
+- **GitHub:** single source of truth for application code, documentation, migrations, tests, and change history.
+- **Cloudflare Workers:** the primary production runtime for the web application and server-side HTTP routes.
+- **Supabase:** one hosted project for Postgres and Auth.
+- **Google and GitHub OAuth:** both provided through Supabase Auth.
+- **AI provider:** called only from server-side code for an explicit workflow-discovery request.
+- **Browser:** UI only; never holds server secrets or decides authorization.
 
-Do not introduce a second backend runtime or a second Supabase project merely to preserve historical experiments. Any change to this decision must explain the concrete need and ongoing cost.
+The exact full-stack framework is intentionally deferred to Phase 02. The choice must be Cloudflare Workers-compatible, actively supported, and simple to test. Do not start implementing a framework or application in Phase 01.
 
-## 2. Repository and deployment
+Do not add a second backend, a second hosted Supabase project, a long-lived spike repository, or extra Cloudflare data services without a concrete need, documented trade-off, and owner approval.
 
-The canonical application repository is `papiagasmus/nextaction`. It is the source of truth for the production app and its tests. Use feature branches and pull requests; the default branch is `main`.
+## 2. Canonical repository and intended structure
 
-Production must deploy from the canonical repository to the canonical Cloudflare Worker. Preview builds may be enabled later, but must not create unmanaged projects, hidden sources of truth, or extra billable resources. Avoid separate long-lived spike repositories unless a time-limited experiment genuinely cannot live behind a branch.
+The canonical repository is papiagasmus/nextaction; its default branch is main. Production code must ultimately deploy from this repository, not from an abandoned spike repository.
 
-Infrastructure configuration must be declarative where practical. Secrets are configured in the platform secret store; no secret values are committed.
+Use one application root and clear logical boundaries. The framework-specific names will be finalized in Phase 02, but the repository should contain these responsibilities:
 
-## 3. Single Supabase project
+- Application entry/routes: pages and server-side request handlers.
+- Feature modules: auth, onboarding, publisher, advertiser, campaigns, ad serving/events.
+- Server-only modules: Supabase integration, URL fetching/workflow discovery, authorization, validation, rate limiting, and audit handling.
+- Shared schemas/types: workflow/event contracts and input/output validation.
+- Public assets: static assets including branding and fallback favicon UI.
+- Tests: unit, integration/database, security regression, and browser E2E.
+- supabase/migrations: versioned SQL migration files.
+- .github/workflows: CI and later deployment workflows.
+- Root documents: README.md, PRODUCT.md, ARCHITECTURE.md, DATA_SECURITY.md, DEVELOPMENT.md, OPERATIONS.md.
 
-The selected Supabase project is `nextaction` (`zrtosqxesdvcijatsito`, region `us-west-2` as observed on 2026-10-23).
+Do not create a monorepo or additional application package without a need. Avoid putting privileged server code in client-importable modules.
 
-It is the one source for:
-- PostgreSQL application data
-- Supabase Auth identity/session integration, if the chosen auth flow needs it
-- versioned SQL migrations
-- RLS policies, database functions, and schema-level constraints
+## 3. Current Supabase project
 
-One Supabase project does not mean that developers may modify production schema casually. Keep schema changes in version-controlled migrations and apply them through a reviewed process. Use deterministic test data and tests; never rely on an undocumented manual dashboard change.
+Use one hosted Supabase project:
+- Name: nextaction
+- Ref: zrtosqxesdvcijatsito
+- Region reported on 2026-10-23: us-west-2
+- Project URL reported on 2026-10-23: https://zrtosqxesdvcijatsito.supabase.co
 
-Do not use Supabase Edge Functions for application endpoints by default. The chosen application runtime is Cloudflare Workers. Add Supabase Edge Functions only for a clearly justified Supabase-native feature and document the reason.
+It owns application Postgres data, Supabase Auth identities, schema constraints, RLS policies, and SQL functions. All application schema changes are version-controlled migrations; do not rely on undocumented dashboard-only modifications.
 
-## 4. Request/data flow
+One hosted project is a product/operating constraint, not permission to test destructive operations on live data. Use deterministic fixtures, test identities, local or mocked tests, and explicit confirmation for destructive changes. Do not create a second hosted Supabase project just for convenience.
 
-### Standard app request
+Supabase Edge Functions are not the default application runtime. Add one only when a clearly justified Supabase-native capability requires it and document the decision first.
 
+## 4. Authentication and session flow
+
+Required providers are Google and GitHub OAuth through Supabase Auth. Official implementation references:
+- Google provider: https://supabase.com/docs/guides/auth/social-login/auth-google
+- GitHub provider: https://supabase.com/docs/guides/auth/social-login/auth-github
+- Redirect URL allow-list: https://supabase.com/docs/guides/auth/redirect-urls
+- Supabase server-side auth package guidance: https://supabase.com/docs/guides/auth/server-side
+
+Use a single session model appropriate for the selected framework, with the OAuth PKCE flow where the server-side auth model requires it. If the framework uses server-rendered pages/cookies, implement secure session cookies and correct cache behavior. If authentication is passed per request as a bearer token, validate that token server-side. Do not mix localStorage, cookies, and duplicated custom sessions without an explicit design.
+
+Provider callback URLs and allowed post-login redirects must be configured explicitly. The post-login destination must be an internal allow-listed route; an arbitrary user-supplied website URL is data to preserve as onboarding intent, not a redirect target. Test cookie/code-verifier propagation if the chosen PKCE flow uses it. Never trust decoded-but-unverified claims for authorization; validate the session/user server-side.
+
+## 5. Landing URL and onboarding request flow
+
+1. Landing page accepts a SaaS website URL.
+2. Validate scheme and syntax; normalize hostname; reject disallowed destination classes before any server-side fetch.
+3. Show favicon on a best-effort basis. A favicon failure must not invalidate an otherwise well-formed URL.
+4. A well-formed URL, public reachability, successful text extraction, and verified ownership are distinct states.
+5. If unauthenticated, begin Google/GitHub OAuth and preserve the validated URL as onboarding intent. Use a safe internal callback and prevent open redirects.
+6. After callback, exchange the OAuth code/session using the selected auth model and route to onboarding with the URL prefilled.
+7. Ask Publisher, Advertiser, or Both before the role-specific product setup.
+8. Once onboarding is complete, the primary landing CTA for an authenticated user says “Go to dashboard”. Additional websites are added from the dashboard.
+
+If the site blocks automated fetching, manual setup remains available. The app must not require a successful AI scrape merely to authenticate or start onboarding.
+
+## 6. Publisher workflow flow
+
+### Manual workflow setup
+Manual entry is the reliable baseline and must not depend on an AI provider. The schema represents:
+- object: the kind of item/task being acted on
+- action/event: the operation or event that occurred
+- output/result: the resulting state or useful outcome
+
+Persist only the declared workflow metadata and the minimum identifiers needed for later matching.
+
+### Optional AI-assisted discovery
+1. User explicitly asks for suggestions.
+2. Server validates the public URL and checks the destination/redirects for SSRF risks.
+3. Bounded fetch retrieves accessible public pages.
+4. Extract useful visible public text/product signals.
+5. Ask the AI provider for schema-constrained candidate workflows.
+6. Validate shape, lengths, allowed values, and supporting source/evidence where available.
+7. Return candidates for user review/edit.
+8. Persist/enable only candidates the user explicitly selects and saves.
+
+Keep each stage independently observable. A failed fetch, empty extraction, provider error, malformed model output, and UI render error must produce distinguishable internal categories. The AI may return no candidate if evidence is insufficient; do not fabricate success.
+
+Do not inspect authenticated pages or the end user's actual document/object contents. The website reader is for public product/marketing information, not private workspaces.
+
+## 7. Domain ownership and publisher activation
+
+Publisher-domain ownership requires server-verified DNS TXT proof. A URL check, favicon, provider login, or workflow draft does not prove ownership.
+
+A challenge must be random, bound to authenticated owner and normalized hostname, time-limited, one-time-use, and checked server-side. Publisher may save draft configuration while unverified; live placement/integration activation requires verified ownership. Verification state and owner changes must be enforced in every write/serve path.
+
+## 8. Workspace and platform permissions
+
+Keep separate fields/concepts for:
+- Product modes: Publisher, Advertiser, Both.
+- Workspace membership/permission: owner, admin, member.
+- Platform administrator privilege: explicit elevated grant outside ordinary product role selection.
+
+Workspace invites are bound to a recipient and workspace, expire, can be revoked before acceptance, and are accepted only by the intended authenticated identity. Role grants/revocations and privileged platform actions create audit records. The browser never supplies the final authority for identity, tenant, owner, or role.
+
+## 9. Request/data flow
+
+A standard request:
 1. Browser calls a Cloudflare Worker route.
-2. Worker validates input, authentication context, authorization, and rate limits.
-3. Worker uses the least-privileged Supabase access pattern available.
-4. Postgres constraints and RLS enforce data ownership and invariants.
-5. Worker returns a minimal response to the browser.
-6. Security-relevant mutations generate an audit event.
+2. Worker validates input, session, resource permission, and rate limits.
+3. Worker uses the least-privileged Supabase access path.
+4. Database constraints and RLS enforce ownership and invariants.
+5. Worker returns only the minimal client response.
+6. Security-relevant mutations append an audit record.
 
-Never trust a user-supplied owner ID without deriving or verifying it from the authenticated context. Never use frontend role metadata as the final authorization check.
+Avoid server-role/service-role access for ordinary user flows. Where a trusted server operation genuinely needs elevated access, isolate it behind explicit authorization and narrow validated inputs.
 
-### Website workflow discovery
+## 10. Ad event context
 
-1. Browser submits a URL to a protected or appropriately rate-limited Worker endpoint.
-2. Worker validates URL scheme and destination and applies SSRF protections.
-3. A bounded fetch/extraction routine reads only publicly accessible content.
-4. Extraction and model interpretation produce schema-validated candidate workflow suggestions with evidence.
-5. Results return to the publisher for review.
-6. Only an explicit user action persists/enables selected workflow records.
+NextAction matches declared workflow metadata; it does not need to receive or inspect the underlying document, invoice, form, message, or other object contents.
 
-Do not let arbitrary URLs target localhost, private IP ranges, cloud metadata addresses, or internal services. Revalidate redirects and resolved destinations, set timeouts and response-size limits, restrict content types, and consider DNS rebinding. Do not use a generic fetch proxy as a security boundary by itself.
+The event payload should contain the minimum needed to identify the publisher/workflow and event context. Do not send private object contents or personal data to advertisers. Do not create an automatic suppression rule solely from an object's label. Enforce any explicit workflow/publisher/platform exclusion that applies, without reading private content. This boundary must be part of the event schema and tests.
 
-## 5. Website reading: troubleshoot by stages
+Campaign state changes and ad serving must check authorization, campaign approval/activation, publisher verification, workflow eligibility, policy restrictions, and rate/fraud controls on the server.
 
-Keep discovery stages independently observable:
-- URL validation and normalization
-- DNS/SSRF validation
-- HTTP fetch and redirect handling
-- response type and body-size validation
-- HTML extraction
-- visible-text/product-signal extraction
-- AI structured output
-- schema validation
-- response rendering and user review
+## 11. Initial infrastructure footprint
 
-Return stable internal error categories to logs, with safe client-facing messages. A blank or failed extraction must not be mistaken for a valid empty list of workflows.
-
-For JavaScript-only sites, use one fallback strategy only if it can be used within the selected platform's supported limits and cost constraints. Always preserve manual configuration as the fallback. Do not promise browser rendering until the chosen implementation is tested on representative sites.
-
-## 6. State ownership
-
-- Database is authoritative for persisted users, roles, publisher domains, workflow choices, campaign state, and ad event records.
-- Application runtime validates transitions and enforces access control.
-- Browser state is ephemeral and never authoritative for ownership or permissions.
-- AI output is a suggestion, not an authoritative configuration.
-- Git history and migration files are the source of truth for intended schema state.
-
-## 7. Authentication and authorization
-
-Choose one documented authentication/session approach compatible with the Worker runtime and Supabase Auth. Do not mix unrelated cookie strategies or maintain duplicated session state. Validate sessions on the server for protected actions, set secure cookie flags when cookies are used, and test expiration and refresh paths.
-
-Authorization must be resource-specific. A publisher may manage only verified domains and workflows they own. Campaign activation should be restricted to authorized advertisers/admin reviewers. Admin grants and sensitive changes need an audit trail. The exact authorization matrix must be tested before enabling production mutations.
-
-## 8. Keep infrastructure small
-
-Initial platform footprint should be:
+Initial intended footprint:
 - one GitHub repository
-- one Cloudflare Worker application
-- one Supabase project
-- no extra database, KV, D1, queue, Durable Object, or Edge Function unless a documented requirement justifies it.
+- one full-stack application on Cloudflare Workers
+- one hosted Supabase project
+- CI and browser tests in GitHub Actions
+- no required KV, D1, R2, queue, Durable Object, extra hosted database, or Supabase Edge Function
 
-Use the simplest synchronous implementation that satisfies the requirement. Add queues, background workflows, or stateful services only when measured load, retries, or correctness requires them and their free-tier/pricing constraints are verified.
+Use a synchronous design for the first vertical slice. Add services only when measured traffic or correctness needs justify them and the current cost/limits have been checked.
+
+## 12. Framework and deployment selection
+
+Phase 02 must choose one Workers-compatible framework and record the choice in the repository. Compare only a small shortlist on:
+- Cloudflare-supported deployment/adapter path
+- compatibility with OAuth and server-side Supabase Auth
+- ease of local development and Playwright testing
+- TypeScript support and build simplicity
+- free-tier practicality and operational complexity
+
+Cloudflare's current full-stack framework guide: https://developers.cloudflare.com/workers/static-assets/routing/full-stack-application/
+
+Do not begin application implementation until Phase 01's six documents are approved.
