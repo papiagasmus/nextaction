@@ -13,6 +13,7 @@ The initial target market is the United States and global SaaS builders. Product
 - **Landing URL flow:** an unauthenticated user submits a SaaS URL, the URL is validated and its favicon is shown when available, and the URL intent is preserved through login. After OAuth callback, onboarding opens with the URL retained. Once signed in, the primary landing CTA says “Go to dashboard”.
 - **Onboarding roles:** the user chooses Publisher, Advertiser, or Both before the role-specific product setup.
 - **Publisher workflows:** manual entry is the dependable baseline. AI-assisted discovery is optional, explicitly requested, reviewable, and never silently activates a workflow.
+- **Publisher integration:** the planned ad path includes a small SDK/beacon/API contract and a publisher-scoped, revocable integration credential; it must send workflow metadata, not the user's underlying object contents.
 - **Workflow context:** represent the object, action/event, and output/result. Do not inspect or collect the end user's actual document or object contents to create ad context.
 - **Ownership:** a URL that parses or has a favicon is not proof of domain ownership. Publisher domain ownership requires a server-verified DNS TXT challenge before live publisher serving is enabled.
 - **Security and roles:** distinguish product modes (Publisher/Advertiser/Both) from workspace permissions (owner/admin/member) and any platform-admin grant. Sensitive grants and state changes are audited.
@@ -24,7 +25,7 @@ The initial target market is the United States and global SaaS builders. Product
 1. A visitor enters a website URL in the landing-page URL field. No marketing email capture is required.
 2. The app validates and normalizes the URL, distinguishes a malformed URL from a site that cannot be reached, and tries to show a favicon.
 3. If the visitor is not authenticated, route to login with Google and GitHub options while preserving the URL as onboarding state.
-4. On successful OAuth callback, route to onboarding with that URL prefilled.
+4. On successful OAuth callback, if a URL intent is pending, resume onboarding with the URL prefilled—even for a returning user. Without a pending URL intent, new users enter onboarding and users who have completed onboarding go to the dashboard.
 5. Ask the user to choose Publisher, Advertiser, or Both before “Your product setup”.
 6. Publisher/Both can configure workflows manually or explicitly request AI suggestions, then verify domain ownership via DNS.
 7. A URL, favicon, or saved draft does not imply verified ownership. Live publisher activation requires verification.
